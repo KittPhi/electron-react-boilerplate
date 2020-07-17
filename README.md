@@ -68,13 +68,68 @@ npm install --save-dev electron
 npm install --save-dev wait-on
 npm install --save-dev concurrently
 ```
-```
-npm run react-start
-```
-In seperate terminal run:
-```
-npm run electron-start
-```
+
+## After cloning:
+> `npm install` then `npm start`
+> npm install will install needed dependencies and also electron-load-balancer.
+
+
+`npm start` will execute:
+
+    "start": "concurrently 'npm run react-start' 'wait-on http://localhost:3000/ && npm run electron-start'",
+
+or Individually:
+> `npm run react-scripts start` Then in seperate terminal run:
+> `npm run electron-start`
+    
+    "react-start": "BROWSER=NONE react-scripts start",
+        "electron-start": "DEV=1 electron .",
+
+### electron-load-balancer Library:
+- Reusing python libraries that have not been implemented/ported in JS.
+- Taking advantage of python threads for convenient background processing
+    1. register( ipcMain, registeredPaths )
+    2. start( ipcRenderer, processName, values )
+    3. stop( ipcRenderer, processName )
+    4. job( ipcRenderer, processName, func, cleanup_func )
+    5. onReceiveData ( ipcRenderer, processName, func )
+    6. sendData ( ipcRenderer, processName, value )
+
+    npm install --save electron-load-balancer
+   
+   Important:
+   1. You need to register possible background tasks way ahead of time during the compilation time.
+   2. The developer will be responsible for creating and destroying background tasks using suitable hooks and API calls provided.
+
+## The sample app (Factorial Calculator):
+
+### NOTE: 
+> *`The communication between the JS realm and the python realm happens using the HTML`* files. They are more or less like *bridges between electron and python scripts*. Also, note that *`communication happens using stdin and stdout`*. To keep things structured I have used JSON as the serialization technique.
+
+## Now your turn:
+> public > `electron.js`
+> 1. Register background_tasks
+> 2. Add Listeners = bounces the message from background tasks to the UI thread
+
+> scripts > `python_to_be_run.py`
+> 1. contains **stdin** and **stdout**
+
+> background_tasks > `python_to_be_run.html`
+> 1. acts as hidden renderer process launching the python_script in the background.
+
+> src > React JS Code here.
+> 1. `App.js` = Clean Up happnes here; preemptively Mounts and Unmounts components.
+
+
+> 2. `Home.js`
+> A. Listens for `python_script.py` output, kills background process as soon as we get that result. 
+> B. Starts python_script.py background tasks.
+> C. Removes all output listeners before app shuts down.
+> D. Sends data to preemtive loop (process already running)
+
+<center>
+<img src=https://miro.medium.com/max/3200/1*nBbb3oVqPH1g5Que9_VqbA.png alt="alt text" width="50%" height="50%">
+</center>
 
 ```python
 s = "Python syntax highlighting"
